@@ -44,12 +44,14 @@ def mahalanobis(x=None, robust=True):
     '''
     from sklearn.covariance import EmpiricalCovariance, MinCovDet
 
+    assert len(X) == len(X.dropna()), 'Matrix must have no NaNs'
+
     cov = MinCovDet().fit(x) if robust else EmpiricalCovariance().fit(x)
     matrix_minus_mean = x - cov.location_
     inv_covariance_matrix = np.linalg.inv(cov.covariance_)
     md = np.dot(matrix_minus_mean, inv_covariance_matrix)
     
-    return np.sqrt(np.dot(md, matrix_minus_mean.T).diagonal())
+    return np.dot(md, matrix_minus_mean.T).diagonal()
 
 
 '''
@@ -85,22 +87,27 @@ X = np.dot(np.random.randn(N_OBS, N_COL), cov)
 
 X[-N_OUT:] = np.dot(np.random.randn(N_OUT, N_COL), covC)  # contaminate sample
 
-X = pd.DataFrame(X, columns=['Var1','Var2'])
+X = pd.DataFrame(X, columns=['Var'+str(x) for x in range(1, N_COL+1)])
 
 X['cont'] = (X.index >= (1-SH_OUT)*N_OBS).astype(int)
 
-X['RMD'] = mahalanobis(X[['Var1','Var2']], robust=True)
+X['NMD'] = mahalanobis(X[['Var1','Var2']], robust=False)  # naive mah. distance
+X['RMD'] = mahalanobis(X[['Var1','Var2']], robust=True)  # robust mah. distance
 X['pVal'] = 1 - chi2.cdf(X.RMD, df=N_COL)
 
-fig, ax = plt.subplots(1,2,figsize=(10,6))
+fig, ax = plt.subplots(1,3,figsize=(14,6))
 
 X.plot.scatter('Var1','Var2', c='cont', cmap=CMAP, ax=ax[0],
 title='Originated vs contaminated observations', xlabel='', ylabel='')
 
-X.plot.scatter('Var1', 'Var2', c='RMD', cmap=CMAP, ax=ax[1],
-title='Robust mahalanobuis distance helps identify correct cluster',
+X.plot.scatter('Var1', 'Var2', c='NMD', cmap=CMAP, ax=ax[1],
+title='Non-robust mahalanobis distance',
+xlabel='',ylabel='', vmin=0, vmax=20)
+
+X.plot.scatter('Var1', 'Var2', c='RMD', cmap=CMAP, ax=ax[2],
+title='Robust mahalanobis distance',
 xlabel='',ylabel='', vmin=0, vmax=20)
 
 fig.tight_layout()
 
-# %%
+fig.savefig('example.svg')

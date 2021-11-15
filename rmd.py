@@ -2,9 +2,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Robust multivariate outlier detection using Mahalanobis distance
-
-NOTE: This project is incomplete
+Robust multivariate outlier detection using Mahalanobis distance.
 
 @author: mattackman
 """
